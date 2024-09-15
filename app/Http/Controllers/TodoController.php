@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Todo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TodoController extends Controller
 {
     public function index()
     {
-        return Todo::all();
+        $todos = Auth::user()->todos;
+        return response()->json($todos);
     }
 
     public function create(Request $request)
@@ -17,6 +19,7 @@ class TodoController extends Controller
         $todo = Todo::create([
             'todo' => $request->todo,
             'is_completed' => $request->is_completed ?? false,
+            'user_id' => Auth::id(),
         ]);
 
         return response()->json($todo, 201);
@@ -24,7 +27,7 @@ class TodoController extends Controller
 
     public function update(Request $request, $id)
     {
-        $todo = Todo::findOrFail($id);
+        $todo = Auth::user()->todos()->findOrFail($id);
         $todo->update($request->only([
             'todo',
             'is_completed'
@@ -35,7 +38,7 @@ class TodoController extends Controller
 
     public function delete($id)
     {
-        $todo = Todo::findOrFail($id);
+        $todo = Auth::user()->todos()->findOrFail($id);
         $todo->delete();
 
         return response()->json(['id' => $id]);

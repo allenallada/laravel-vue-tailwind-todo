@@ -41,5 +41,8 @@ export const useTodoStore = defineStore('todo', {
         console.error('Error deleting todo:', error);
       }
     },
+    clearTodos() {
+      this.todos = [];
+    },
   },
 });

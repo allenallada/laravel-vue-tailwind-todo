@@ -1,8 +1,24 @@
 import axios from 'axios';
+import { useUserStore } from '../stores/userStore';
+
+const apiClient = axios.create({
+  baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const userStore = useUserStore();
+  if (userStore.token) {
+    config.headers.Authorization = `Bearer ${userStore.token}`;
+  }
+  return config;
+});
 
 export const fetch = async () => {
   try {
-    const response = await axios.get('/api/todos');
+    const response = await apiClient.get('/todos');
     return response.data;
   } catch (error) {
     console.error('Error fetching todos:', error);
@@ -12,7 +28,7 @@ export const fetch = async () => {
 
 export const create = async (todo) => {
   try {
-    const response = await axios.post('/api/todos', todo);
+    const response = await apiClient.post('/todos', todo);
     return response.data;
   } catch (error) {
     console.error('Error creating todo:', error);
@@ -22,7 +38,7 @@ export const create = async (todo) => {
 
 export const update = async (id, updatedTodo) => {
   try {
-    const response = await axios.put(`/api/todos/${id}`, updatedTodo);
+    const response = await apiClient.put(`/todos/${id}`, updatedTodo);
     return response.data;
   } catch (error) {
     console.error('Error updating todo:', error);
@@ -32,7 +48,7 @@ export const update = async (id, updatedTodo) => {
 
 export const remove = async (id) => {
   try {
-    await axios.delete(`/api/todos/${id}`);
+    await apiClient.delete(`/todos/${id}`);
   } catch (error) {
     console.error('Error deleting todo:', error);
     throw error;
