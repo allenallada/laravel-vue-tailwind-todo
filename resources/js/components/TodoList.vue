@@ -1,76 +1,89 @@
 <template>
-  <div class="todo-list container mx-auto mt-10 p-4">
-    <h1 class="text-2xl font-bold mb-4">Todo List</h1>
-    <div class="input-group flex justify-center items-center mb-4">
-      <input
-        v-model="newTodo"
-        @keyup.enter="addTodo"
-        placeholder="Add a new todo"
-        class="border border-gray-300 rounded px-4 py-2 w-64"
-      />
-      <button
-        @click="addTodo"
-        class="ml-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-      >
-        Add
-      </button>
-    </div>
-    <ul class="list-none p-0">
-      <li v-for="(todo, index) in todos" :key="index">
-        <TodoItem
-          :todo="todo"
-          :index="index"
-          @update-todo="updateTodo"
-          @remove-todo="removeTodo(index)"
+  <div class="flex justify-center items-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+      <div class="flex items-center mb-4">
+        <input
+          v-model="newTodo"
+          type="text"
+          placeholder="Add a new todo"
+          class="flex-1 px-4 py-2 border rounded"
         />
-      </li>
-    </ul>
+        <button
+          @click="addTodo"
+          class="ml-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Add
+        </button>
+      </div>
+      <ul class="list-none p-0">
+        <li v-for="(todo, index) in todos" :key="index" class="mb-2">
+          <TodoItem
+            :todo="todo"
+            :index="index"
+            @update-todo="updateTodo"
+            @remove-todo="removeTodo"
+          />
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useTodoStore } from '../stores/todoStore';
 import TodoItem from './TodoItem.vue';
 
 export default {
   components: {
-    TodoItem
+    TodoItem,
   },
   setup() {
-    const todos = ref([]);
+    const todoStore = useTodoStore();
     const newTodo = ref('');
 
-    const addTodo = () => {
+    const todos = computed(() => todoStore.todos);
+
+    const addTodo = async () => {
       if (newTodo.value.trim()) {
-        todos.value.push({ todo: newTodo.value.trim(), isCompleted: false });
-        newTodo.value = '';
+        try {
+          await todoStore.createTodo({ todo: newTodo.value.trim(), is_completed: false });
+          newTodo.value = '';
+        } catch (error) {
+          console.error('Error adding todo:', error);
+        }
       }
     };
 
-    const removeTodo = (index) => {
-      todos.value.splice(index, 1);
+    const updateTodo = async (index, updatedTodo) => {
+      const todo = todos.value[index];
+      try {
+        await todoStore.updateTodo(todo.id, updatedTodo);
+      } catch (error) {
+        console.error('Error updating todo:', error);
+      }
     };
 
-    const updateTodo = ({ index, todo, isCompleted }) => {
-      if (todo !== undefined) {
-        todos.value[index].todo = todo;
-      }
-      if (isCompleted !== undefined) {
-        todos.value[index].isCompleted = isCompleted;
+    const removeTodo = async (index) => {
+      const todo = todos.value[index];
+      try {
+        await todoStore.deleteTodo(todo.id);
+      } catch (error) {
+        console.error('Error deleting todo:', error);
       }
     };
+
+    onMounted(() => {
+      todoStore.fetchTodos();
+    });
 
     return {
       todos,
       newTodo,
       addTodo,
+      updateTodo,
       removeTodo,
-      updateTodo
     };
-  }
+  },
 };
 </script>
-
-<style scoped>
-/* No custom styles needed as we are using Tailwind CSS */
-</style>

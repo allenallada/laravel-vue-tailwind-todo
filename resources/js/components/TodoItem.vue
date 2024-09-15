@@ -1,101 +1,102 @@
 <template>
-  <div
-    :class="[{ 'opacity-50': todo.isCompleted }, 'flex justify-between items-center mb-2 p-2 border border-gray-300 rounded bg-gray-100']"
-  >
-    <div v-if="isEditing" class="flex items-center">
+  <div class="flex items-center mb-2">
+    <input
+      type="checkbox"
+      v-model="localTodo.is_completed"
+      @change="updateTodo"
+      class="mr-2"
+    />
+    <div v-if="isEditing" class="flex-1">
       <input
-        v-model="editTodo"
-        @keyup.enter="updateTodo"
-        class="border border-gray-300 rounded px-4 py-2 w-64"
+        v-model="localTodo.todo"
+        @blur="saveTodo"
+        @keyup.enter="saveTodo"
+        class="flex-1 px-4 py-2 border rounded"
       />
-      <button
-        @click="updateTodo"
-        class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Update
-      </button>
-      <button
-        @click="cancelEdit"
-        class="ml-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-      >
-        Cancel
-      </button>
     </div>
-    <div v-else class="flex justify-between items-center w-full">
-      <div class="flex items-center">
-        <input
-          type="checkbox"
-          :checked="todo.isCompleted"
-          @change="toggleComplete"
-          class="form-checkbox h-5 w-5 text-blue-600"
-        />
-        <span class="ml-2">{{ todo.todo }}</span>
-      </div>
-      <div>
-        <button
-          @click="startEdit"
-          class="ml-2 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-        >
-          Edit
-        </button>
-        <button
-          @click="$emit('remove-todo')"
-          class="ml-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Remove
-        </button>
-      </div>
+    <div v-else class="flex-1 text-left">
+      <span>{{ localTodo.todo }}</span>
     </div>
+    <button
+      @click="toggleEdit"
+      class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+    >
+      {{ isEditing ? 'Save' : 'Edit' }}
+    </button>
+    <button
+      @click="removeTodo"
+      class="ml-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+    >
+      Remove
+    </button>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useTodoStore } from '../stores/todoStore';
 
 export default {
   props: {
-    todo: Object,
-    index: Number
+    todo: {
+      type: Object,
+      required: true,
+    },
+    index: {
+      type: Number,
+      required: true,
+    },
   },
   emits: ['update-todo', 'remove-todo'],
   setup(props, { emit }) {
+    const todoStore = useTodoStore();
+    const localTodo = ref({ ...props.todo });
     const isEditing = ref(false);
-    const editTodo = ref(props.todo.todo);
 
-    const startEdit = () => {
-      isEditing.value = true;
-    };
-
-    const updateTodo = () => {
-      if (editTodo.value.trim()) {
-        emit('update-todo', { index: props.index, todo: editTodo.value.trim() });
-        cancelEdit();
+    const toggleEdit = () => {
+      isEditing.value = !isEditing.value;
+      if (!isEditing.value) {
+        saveTodo();
       }
     };
 
-    const cancelEdit = () => {
-      isEditing.value = false;
-      editTodo.value = props.todo.todo;
+    const saveTodo = async () => {
+      try {
+        await todoStore.updateTodo(localTodo.value.id, localTodo.value);
+        emit('update-todo', props.index, localTodo.value);
+      } catch (error) {
+        console.error('Error saving todo:', error);
+      }
     };
 
-    const toggleComplete = () => {
-      emit('update-todo', { index: props.index, todo: props.todo.todo, isCompleted: !props.todo.isCompleted });
+    const updateTodo = async () => {
+      try {
+        await todoStore.updateTodo(localTodo.value.id, localTodo.value);
+        emit('update-todo', props.index, localTodo.value);
+      } catch (error) {
+        console.error('Error updating todo:', error);
+      }
     };
+
+    const removeTodo = () => {
+      emit('remove-todo', props.index);
+    };
+
+    watch(
+      () => props.todo,
+      (newTodo) => {
+        localTodo.value = { ...newTodo };
+      }
+    );
 
     return {
+      localTodo,
       isEditing,
-      editTodo,
-      startEdit,
+      toggleEdit,
+      saveTodo,
       updateTodo,
-      cancelEdit,
-      toggleComplete
+      removeTodo,
     };
-  }
+  },
 };
 </script>
-
-<style scoped>
-.opacity-50 {
-  opacity: 0.5;
-}
-</style>
