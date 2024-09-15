@@ -1,12 +1,10 @@
 <template>
-    <div class="app">
-      <todo-list></todo-list>
-    </div>
-  </template>
+  <todo-list></todo-list>
+</template>
   
-  <script>
+<script>
   import TodoList from './TodoList.vue';
-  
+
   export default {
     name: 'App',
     components: {
@@ -16,11 +14,11 @@
       console.log('App component mounted.');
     }
   }
-  </script>
-  
-  <style scoped>
+</script>
+
+<style scoped>
   .app {
     text-align: center;
     margin-top: 50px;
   }
-  </style>
+</style>

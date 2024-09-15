@@ -33,70 +33,70 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue';
-import { useTodoStore } from '../stores/todoStore';
+  import { ref, watch } from 'vue';
+  import { useTodoStore } from '../stores/todoStore';
 
-export default {
-  props: {
-    todo: {
-      type: Object,
-      required: true,
+  export default {
+    props: {
+      todo: {
+        type: Object,
+        required: true,
+      },
+      index: {
+        type: Number,
+        required: true,
+      },
     },
-    index: {
-      type: Number,
-      required: true,
+    emits: ['update-todo', 'remove-todo'],
+    setup(props, { emit }) {
+      const todoStore = useTodoStore();
+      const localTodo = ref({ ...props.todo });
+      const isEditing = ref(false);
+
+      const toggleEdit = () => {
+        isEditing.value = !isEditing.value;
+        if (!isEditing.value) {
+          saveTodo();
+        }
+      };
+
+      const saveTodo = async () => {
+        try {
+          await todoStore.updateTodo(localTodo.value.id, localTodo.value);
+          emit('update-todo', props.index, localTodo.value);
+        } catch (error) {
+          console.error('Error saving todo:', error);
+        }
+      };
+
+      const updateTodo = async () => {
+        try {
+          await todoStore.updateTodo(localTodo.value.id, localTodo.value);
+          emit('update-todo', props.index, localTodo.value);
+        } catch (error) {
+          console.error('Error updating todo:', error);
+        }
+      };
+
+      const removeTodo = () => {
+        emit('remove-todo', props.index);
+      };
+
+      watch(
+        () => props.todo,
+        (newTodo) => {
+          localTodo.value = { ...newTodo };
+        }
+      );
+
+      return {
+        localTodo,
+        isEditing,
+        toggleEdit,
+        saveTodo,
+        updateTodo,
+        removeTodo,
+      };
     },
-  },
-  emits: ['update-todo', 'remove-todo'],
-  setup(props, { emit }) {
-    const todoStore = useTodoStore();
-    const localTodo = ref({ ...props.todo });
-    const isEditing = ref(false);
-
-    const toggleEdit = () => {
-      isEditing.value = !isEditing.value;
-      if (!isEditing.value) {
-        saveTodo();
-      }
-    };
-
-    const saveTodo = async () => {
-      try {
-        await todoStore.updateTodo(localTodo.value.id, localTodo.value);
-        emit('update-todo', props.index, localTodo.value);
-      } catch (error) {
-        console.error('Error saving todo:', error);
-      }
-    };
-
-    const updateTodo = async () => {
-      try {
-        await todoStore.updateTodo(localTodo.value.id, localTodo.value);
-        emit('update-todo', props.index, localTodo.value);
-      } catch (error) {
-        console.error('Error updating todo:', error);
-      }
-    };
-
-    const removeTodo = () => {
-      emit('remove-todo', props.index);
-    };
-
-    watch(
-      () => props.todo,
-      (newTodo) => {
-        localTodo.value = { ...newTodo };
-      }
-    );
-
-    return {
-      localTodo,
-      isEditing,
-      toggleEdit,
-      saveTodo,
-      updateTodo,
-      removeTodo,
-    };
-  },
-};
+  };
 </script>
